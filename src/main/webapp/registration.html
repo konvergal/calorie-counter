@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>Calorie counter</title>
+
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+          integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ=="
+          crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+          integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX"
+          crossorigin="anonymous">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="alert alert-danger" id="alert-danger" style="display: none;">
+</div>
+
+<form id="registration-form" style="max-width: 400px; margin: 0 auto;">
+    <h2>Registration</h2>
+    <input type="text" class="form-control input-lg" name="username" id="username" placeholder="Username" />
+    <input type="password" class="form-control input-lg" name="password" id="password" placeholder="Password" style="margin-top: 5px;" />
+    <button class="btn btn-lg btn-primary btn-block" id="registration" type="submit" style="margin-top: 10px;">Registration</button>
+</form>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"
+        integrity="sha384-R4/ztc4ZlRqWjqIuvf6RX5yb/v90qNGx6fS48N0tRxiGkqveZETq72KgDVJCp2TC"
+        crossorigin="anonymous"></script>
+
+<script src="calorie.js"></script>
+
+<script type="text/javascript">
+
+$(function() {
+    $("#registration-form").submit(
+        function(event) {
+            event.preventDefault();
+            $.ajax({
+                    type: 'POST',
+                    url: '/user/register',
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify( { "username" : $("#username").val(), "password" : $("#password").val() } )
+
+                }).done(function (data, textStatus, jqXHR) {
+                    window.location = "index.html";
+
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    if (jqXHR.status === 409) {
+                        errorMsg("Existing user!");
+                    } else {
+                        errorMsg("Error during registration!");
+                        console.error(jqXHR);
+                    }
+
+                });
+        }
+    );
+});
+
+</script>
+
+</body>
+
+</html>
