@@ -4,11 +4,9 @@ import cc.calorie.counter.configuration.CalorieAuthenticationPrincipal;
 import cc.calorie.counter.service.CalorieEntryDTO;
 import cc.calorie.counter.service.CalorieEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,19 +22,22 @@ public class CalorieEntryController {
 
     @RequestMapping(method = RequestMethod.GET)
     public @ResponseBody List<CalorieEntryDTO> findCalorieEntries(
-            @RequestParam(required = false, value = "fromDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> fromDate,
-            @RequestParam(required = false, value = "toDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> toDate,
+            FilterDTO filterDTO,
             @AuthenticationPrincipal CalorieAuthenticationPrincipal calorieAuthenticationPrincipal)
     {
-        return calorieEntryService.findCalorieEntries(fromDate, toDate, calorieAuthenticationPrincipal.getUserId());
+        return calorieEntryService.findCalorieEntries(
+                filterDTO.setUserId(Optional.of(calorieAuthenticationPrincipal.getUserId())));
     }
 
     @RequestMapping(method = RequestMethod.POST)
     public @ResponseBody List<CalorieEntryDTO> addCalorieEntry(
+            FilterDTO filterDTO,
             @RequestBody CalorieEntryDTO calorieEntryDTO,
             @AuthenticationPrincipal CalorieAuthenticationPrincipal calorieAuthenticationPrincipal)
     {
-        return calorieEntryService.addCalorieEntry(calorieEntryDTO, calorieAuthenticationPrincipal.getUserId());
+        Long userId = calorieAuthenticationPrincipal.getUserId();
+        calorieEntryService.addCalorieEntry(calorieEntryDTO, userId);
+        return calorieEntryService.findCalorieEntries(filterDTO.setUserId(Optional.of(userId)));
     }
 
     @RequestMapping(method = RequestMethod.PUT)

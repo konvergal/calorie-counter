@@ -4,15 +4,13 @@ import cc.calorie.counter.exception.WrongUserException;
 import cc.calorie.counter.model.CalorieEntry;
 import cc.calorie.counter.model.User;
 import cc.calorie.counter.repository.CalorieEntryRepository;
+import cc.calorie.counter.web.FilterDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.criteria.Predicate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,7 +23,7 @@ public class CalorieEntryService {
     @Autowired
     private CalorieEntryRepository calorieEntryRepository;
 
-    public List<CalorieEntryDTO> addCalorieEntry(CalorieEntryDTO calorieEntryDTO, Long userId) {
+    public CalorieEntryDTO addCalorieEntry(CalorieEntryDTO calorieEntryDTO, Long userId) {
         Objects.requireNonNull(calorieEntryDTO);
         Objects.requireNonNull(userId);
 
@@ -36,29 +34,14 @@ public class CalorieEntryService {
         User user = new User();
         user.setId(userId);
         calorieEntry.setUser(user);
-        calorieEntryRepository.save(calorieEntry);
-
-        return findCalorieEntries(Optional.empty(), Optional.empty(), userId);
+        return CalorieEntryToDTO.INSTANCE.apply(calorieEntryRepository.save(calorieEntry));
     }
 
-    public List<CalorieEntryDTO> findCalorieEntries(Optional<LocalDateTime> fromDate, Optional<LocalDateTime> toDate, Long userId) {
-        Objects.requireNonNull(fromDate);
-        Objects.requireNonNull(toDate);
-        Objects.requireNonNull(userId);
+    public List<CalorieEntryDTO> findCalorieEntries(FilterDTO filterDTO) {
+        Objects.requireNonNull(filterDTO);
 
-        List<CalorieEntry> calorieEntries = calorieEntryRepository.findAll((root, query, cb) -> {
-            Predicate predicate = cb.equal(root.get("user").get("id"), userId);
-
-            if (fromDate.isPresent()) {
-                predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.<LocalDateTime>get("dateTime"), fromDate.get()));
-            }
-
-            if (toDate.isPresent()) {
-                predicate = cb.and(cb.lessThanOrEqualTo(root.<LocalDateTime>get("dateTime"), toDate.get()));
-            }
-
-            return predicate;
-        }, new Sort(Sort.Direction.DESC, "dateTime"));
+        List<CalorieEntry> calorieEntries = calorieEntryRepository.findAll(
+                new FindCalorieEntriesSpecification(filterDTO), new Sort(Sort.Direction.DESC, "dateTime"));
 
         List<CalorieEntryDTO> result = calorieEntries.stream().map(CalorieEntryToDTO.INSTANCE).collect(Collectors.toList());
         return result;
