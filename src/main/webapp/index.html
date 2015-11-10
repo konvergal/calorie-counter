@@ -27,7 +27,7 @@
     </div>
     <div class="panel-body">
 
-        <form id="calorie-form" class="form-horizontal">
+        <form id="add-form" class="form-horizontal">
             <div class="form-group">
                 <label for="meal" class="col-sm-2 control-label">Meal</label>
                 <div class="col-sm-10">
@@ -56,10 +56,62 @@
     </div>
 </div>
 
+<div class="modal fade" id="edit-modal">
+    <div class="modal-dialog" style="width: 700px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Edit</h4>
+            </div>
+            <form id="edit-form" class="form-horizontal" data-id="">
+            <div class="modal-body">
+                    <div class="form-group">
+                        <label for="meal" class="col-sm-3 control-label">Meal</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="edit-meal" placeholder="Meal" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="number-of-calories" class="col-sm-3 control-label">Number of calories</label>
+                        <div class="col-sm-9">
+                            <input type="number" class="form-control" id="edit-number-of-calories" placeholder="Number of calories" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="date-time" class="col-sm-3 control-label">Date and time</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="edit-date-time" />
+                        </div>
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">Calorie entries</h3>
     </div>
+
+    <div class="panel-body">
+        <form class="form-inline" id="filter-form">
+            <div class="form-group">
+                <label for="filter-from">From</label>
+                <input type="text" class="form-control" name="from" id="filter-from" placeholder="From" style="width: 200px;">
+            </div>
+            <div class="form-group">
+                <label for="filter-to">To</label>
+                <input type="text" class="form-control" name="to" id="filter-to" placeholder="To" style="width: 200px;">
+            </div>
+            <button type="submit" class="btn btn-default">Filter</button>
+        </form>
+    </div>
+
     <table id="calorieEntryTable" class="table table-striped table-bordered table-hover no-footer" cellspacing="0" width="100%">
         <thead>
             <tr>
@@ -73,6 +125,7 @@
 
         </tbody>
     </table>
+
 </div>
 
 </div>
@@ -90,22 +143,27 @@
 <script type="text/javascript">
 
 function clearCalorieForm() {
-    $("#calorie-form input").val("");
+    $("#add-form input").val("");
 }
 
-function registerDeleteHandler() {
-    $("#calorie-entry-table-body .delete").click(function(event) {
+function getRowAndId(element) {
+    var tr = element.closest("tr");
+    var dataId = tr.attr("data-id");
+    return { row : tr, id : dataId };
+}
+
+function registerDeleteHandler(deleteLink) {
+    deleteLink.click(function(event) {
         event.preventDefault();
 
-        var tr = $(this).closest("tr");
-        var id = tr.attr("data-id");
+        var rowAndId = getRowAndId($(this));
         $.ajax({
             type: 'DELETE',
-            url: '/api/calories/' + id,
+            url: '/api/calories/' + rowAndId.id,
             contentType: "application/json; charset=utf-8"
 
         }).done(function (data, textStatus, jqXHR) {
-            tr.remove();
+            rowAndId.row.remove();
             successMsg("Calorie entry deleted!");
 
         }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -115,29 +173,76 @@ function registerDeleteHandler() {
     });
 }
 
+function registerEditHandler(editLink) {
+    editLink.click(function(event) {
+        event.preventDefault();
+
+        var tds = $(this).closest("tr").find("td");
+        $("#edit-form").attr('data-id', getRowAndId($(this)).id);
+        $("#edit-meal").val($(tds.get(0)).text());
+        $("#edit-number-of-calories").val($(tds.get(1)).text());
+        $("#edit-date-time").val($(tds.get(2)).text());
+
+        $("#edit-modal").modal('show');
+    });
+}
+
+function createCalorieRow(calorieEntry) {
+    var tr = $("<tr/>", { 'data-id':calorieEntry.id });
+    $("<td/>", { 'text':calorieEntry.meal } ).appendTo(tr);
+    $("<td/>", { 'text':calorieEntry.numberOfCalories } ).appendTo(tr);
+    $("<td/>", { 'text':calorieEntry.dateTime } ).appendTo(tr);
+    var lastColumn = $("<td/>").appendTo(tr);
+    registerEditHandler($("<a href=\"#\" class=\"edit\">Edit</a>").appendTo(lastColumn));
+    lastColumn.append("&nbsp;");
+    registerDeleteHandler($("<a href=\"#\" class=\"delete\">Delete</a>").appendTo(lastColumn));
+    return tr;
+}
+
 function buildCalorieEntryTable(data) {
     console.log(data);
     $("#calorie-entry-table-body").html("");
     for (i = 0; i < data.length; i++) {
         var calorieEntry = data[i];
-        var tr = $("<tr/>", { 'data-id':calorieEntry.id }).appendTo("#calorie-entry-table-body");
-        $("<td/>", { 'text':calorieEntry.meal } ).appendTo(tr);
-        $("<td/>", { 'text':calorieEntry.numberOfCalories } ).appendTo(tr);
-        $("<td/>", { 'text':calorieEntry.dateTime } ).appendTo(tr);
-        var lastColumn = $("<td/>").appendTo(tr);
-        $("<a href=\"#\" class=\"delete\">Delete</a>").appendTo(lastColumn);
+        var tr = createCalorieRow(calorieEntry);
+        tr.appendTo("#calorie-entry-table-body");
     }
-    registerDeleteHandler();
+}
+
+function getFilterUrlParameters() {
+    console.log($("#filter-form").serializeArray());
+    var parameters = $.param($("#filter-form").serializeArray());
+    console.log(parameters);
+    return parameters;
+}
+
+function getCalories() {
+    $.ajax({
+            type: 'GET',
+            url: '/api/calories?' + getFilterUrlParameters(),
+            contentType: "application/json; charset=utf-8"
+
+        }).done(function (data, textStatus, jqXHR) {
+            buildCalorieEntryTable(data);
+
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            if (jqXHR.status === 403) {
+                window.location = "login.html";
+            } else {
+                errorMsg("Unable to get calorie entries!");
+                console.error(jqXHR);
+            }
+        });
 }
 
 $(function() {
-    $("#calorie-form").submit(
+    $("#add-form").submit(
         function(event) {
             event.preventDefault();
 
             $.ajax({
                     type: 'POST',
-                    url: '/api/calories',
+                    url: '/api/calories?' + getFilterUrlParameters(),
                     contentType: "application/json; charset=utf-8",
                     data: JSON.stringify(
                             { "numberOfCalories" : $("#number-of-calories").val(),
@@ -155,22 +260,40 @@ $(function() {
         }
     );
 
-    $.ajax({
-            type: 'GET',
-            url: '/api/calories',
-            contentType: "application/json; charset=utf-8"
+    $("#filter-form").submit(
+        function(event) {
+            event.preventDefault();
+            getCalories();
+        }
+    );
 
-        }).done(function (data, textStatus, jqXHR) {
-            buildCalorieEntryTable(data);
+    $("#edit-form").submit(
+        function(event) {
+            event.preventDefault();
 
-        }).fail(function (jqXHR, textStatus, errorThrown) {
-            if (jqXHR.status === 403) {
-                window.location = "login.html";
-            } else {
-                errorMsg("Unable to get calorie entries!");
-                console.error(jqXHR);
-            }
-        });
+            var dataObject = { "id" : $("#edit-form").attr("data-id"),
+                              "numberOfCalories" : $("#edit-number-of-calories").val(),
+                              "meal" : $("#edit-meal").val(),
+                              "dateTime" : $("#edit-date-time").val() };
+
+            $.ajax({
+                    type: 'PUT',
+                    url: '/api/calories',
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(dataObject)
+
+                }).done(function (data, textStatus, jqXHR) {
+                    $("#edit-modal").modal('hide');
+                    $("tr[data-id='" + dataObject.id + "']").replaceWith(createCalorieRow(dataObject));
+                    successMsg("Calorie entry edited.");
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    errorMsg("Unable to edit calorie entry!");
+                    console.error(jqXHR);
+                });
+        }
+    );
+
+    getCalories();
 });
 
 </script>
