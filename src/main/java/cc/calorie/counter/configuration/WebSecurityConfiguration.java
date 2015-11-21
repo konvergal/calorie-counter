@@ -4,6 +4,7 @@ import cc.calorie.counter.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,10 +34,10 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
                 .authorizeRequests()
                     .antMatchers("/api/**").authenticated()
-                    .antMatchers("/**").permitAll()
-                    .and()
-//                .antMatchers(HttpMethod.POST, "/user/register").permitAll()
-//                .antMatchers(HttpMethod.POST, "/user/login").permitAll()
+                    .antMatchers(HttpMethod.POST, "/user/register").permitAll()
+                    .antMatchers(HttpMethod.POST, "/user/login").permitAll()
+//                    .antMatchers("/**").permitAll()
+                .and()
 
 //                .addFilterBefore(
 //                new LoginFilter(
