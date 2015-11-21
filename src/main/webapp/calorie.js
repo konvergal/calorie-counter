@@ -1,168 +1,168 @@
 jQuery(function ($) {
-	'use strict';
+    'use strict';
 
-	var App = {
+    var App = {
 
-		init: function () {
-			this.addCalorieObject = {};
-			this.editCalorieObject = {};
-			this.filterObject = {};
+        init: function () {
+            this.addCalorieObject = {};
+            this.editCalorieObject = {};
+            this.filterObject = {};
 
             this.cacheElements();
-			this.bindEvents();
+            this.bindEvents();
             this.getCalories();
-		},
+        },
 
         cacheElements: function () {
             this.$addCalorieForm = $("#add-form");
             this.$editCalorieForm = $("#edit-form");
-    	    this.$filterForm = $("#filter-form");
-			this.$editModal = $("#edit-modal");
-			this.$editMeal = $("#edit-meal");
-			this.$editNumberOfCalories = $("#edit-number-of-calories");
-			this.$editDateTime = $("#edit-date-time");
+            this.$filterForm = $("#filter-form");
+            this.$editModal = $("#edit-modal");
+            this.$editMeal = $("#edit-meal");
+            this.$editNumberOfCalories = $("#edit-number-of-calories");
+            this.$editDateTime = $("#edit-date-time");
             this.$calorieEntryTableBody = $("#calorie-entry-table-body");
         },
 
-		bindEvents: function() {
-			this.$addCalorieForm.find('input').on('keyup', function(event) {
-				var target = $(event.target);
-				this.addCalorieObject[target.attr('name')] = target.val();
-			}.bind(this));
+        bindEvents: function() {
+            this.$addCalorieForm.find('input').on('keyup', function(event) {
+                var target = $(event.target);
+                this.addCalorieObject[target.attr('name')] = target.val();
+            }.bind(this));
 
-			this.$editCalorieForm.find('input').on('keyup', function(event) {
-				var target = $(event.target);
-				this.editCalorieObject[target.attr('name')] = target.val();
-			}.bind(this));
+            this.$editCalorieForm.find('input').on('keyup', function(event) {
+                var target = $(event.target);
+                this.editCalorieObject[target.attr('name')] = target.val();
+            }.bind(this));
 
-			this.$filterForm.find('input').on('keyup', function(event) {
-				var target = $(event.target);
-				this.filterObject[target.attr('name')] = target.val();
-			}.bind(this));
+            this.$filterForm.find('input').on('keyup', function(event) {
+                var target = $(event.target);
+                this.filterObject[target.attr('name')] = target.val();
+            }.bind(this));
 
-			this.bindAddCalorieForm();
+            this.bindAddCalorieForm();
             this.bindEditCalorieForm();
             this.bindFilterForm();
-		},
+        },
 
-		bindAddCalorieForm: function() {
+        bindAddCalorieForm: function() {
             this.$addCalorieForm.submit(
                 function(event) {
                     event.preventDefault();
                     this.addCalorie();
                 }.bind(this)
             );
- 		},
+        },
 
-		addCalorie: function(calorieObject) {
+        addCalorie: function(calorieObject) {
             $.ajax({
                 type: 'POST',
                 url: '/api/calories?' + $.param(this.filterObject),
                 contentType: "application/json; charset=utf-8",
                 data: JSON.stringify(this.addCalorieObject)
             })
-			.done(this.addCalorieDone.bind(this))
-			.fail(this.addCalorieFail.bind(this));
-		},
-		addCalorieDone: function(data, textStatus, jqXHR) {
+            .done(this.addCalorieDone.bind(this))
+            .fail(this.addCalorieFail.bind(this));
+        },
+        addCalorieDone: function(data, textStatus, jqXHR) {
             this.clearForm(this.$addCalorieForm);
-			this.addCalorieObject = {};
+            this.addCalorieObject = {};
             successMsg("Calorie entry added.");
             this.buildCalorieEntryTable(data);
-		},
-		addCalorieFail: function(jqXHR, textStatus, errorThrown) {
+        },
+        addCalorieFail: function(jqXHR, textStatus, errorThrown) {
             errorMsg("Unable to add calorie entry!");
             console.error(jqXHR);
         },
 
- 		bindFilterForm: function() {
+        bindFilterForm: function() {
             this.$filterForm.submit(
                 function(event) {
                     event.preventDefault();
                     this.getCalories();
                 }.bind(this)
             );
- 		},
+        },
 
-		getCalories: function() {
-			$.ajax({
-				type: 'GET',
-				url: '/api/calories?' + $.param(this.filterObject),
-				contentType: "application/json; charset=utf-8"
-			})
-			.done(this.getCaloriesDone.bind(this))
-			.fail(this.getCaloriesFail.bind(this));
-		},
-		getCaloriesDone: function(data, textStatus, jqXHR) {
+        getCalories: function() {
+            $.ajax({
+                type: 'GET',
+                url: '/api/calories?' + $.param(this.filterObject),
+                contentType: "application/json; charset=utf-8"
+            })
+            .done(this.getCaloriesDone.bind(this))
+            .fail(this.getCaloriesFail.bind(this));
+        },
+        getCaloriesDone: function(data, textStatus, jqXHR) {
             this.buildCalorieEntryTable(data);
-		},
-		getCaloriesFail: function(jqXHR, textStatus, errorThrown) {
+        },
+        getCaloriesFail: function(jqXHR, textStatus, errorThrown) {
             if (jqXHR.status === 403) {
                 window.location = "login.html";
             } else {
                 errorMsg("Unable to get calorie entries!");
                 console.error(jqXHR);
             }
-		},
+        },
 
- 		bindEditCalorieForm: function() {
- 			this.$editCalorieForm.submit(
- 				function(event) {
- 					event.preventDefault();
+        bindEditCalorieForm: function() {
+            this.$editCalorieForm.submit(
+                function(event) {
+                    event.preventDefault();
                     this.editCalorie();
- 				}.bind(this)
- 			);
- 		},
+                }.bind(this)
+            );
+        },
 
-		editCalorie: function() {
-			$.ajax({
-				type: 'PUT',
-				url: '/api/calories',
-				contentType: "application/json; charset=utf-8",
-				data: JSON.stringify(this.editCalorieObject)
-			})
-			.done(this.editCalorieDone.bind(this))
-			.fail(this.editCalorieFail.bind(this));
- 		},
- 		editCalorieDone: function(data, textStatus, jqXHR) {
-			this.$editModal.modal('hide');
-			this.updateCalorieRow(this.editCalorieObject);
-			successMsg("Calorie entry edited.");
- 		},
- 		editCalorieFail: function(jqXHR, textStatus, errorThrown) {
-			errorMsg("Unable to edit calorie entry!");
-			console.error(jqXHR);
- 		},
-		updateCalorieRow: function(calorieEntry) {
-			$("tr[data-id='" + calorieEntry.id + "']").replaceWith(this.createCalorieRow(calorieEntry));
-		},
+        editCalorie: function() {
+            $.ajax({
+                type: 'PUT',
+                url: '/api/calories',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(this.editCalorieObject)
+            })
+            .done(this.editCalorieDone.bind(this))
+            .fail(this.editCalorieFail.bind(this));
+        },
+        editCalorieDone: function(data, textStatus, jqXHR) {
+            this.$editModal.modal('hide');
+            this.updateCalorieRow(this.editCalorieObject);
+            successMsg("Calorie entry edited.");
+        },
+        editCalorieFail: function(jqXHR, textStatus, errorThrown) {
+            errorMsg("Unable to edit calorie entry!");
+            console.error(jqXHR);
+        },
+        updateCalorieRow: function(calorieEntry) {
+            $("tr[data-id='" + calorieEntry.id + "']").replaceWith(this.createCalorieRow(calorieEntry));
+        },
 
-		buildCalorieEntryTable: function(data) {
-	        console.log(data);
+        buildCalorieEntryTable: function(data) {
+            console.log(data);
             this.$calorieEntryTableBody.html("");
             for (var i = 0; i < data.length; i++) {
                 var calorieEntry = data[i];
                 var tr = this.createCalorieRow(calorieEntry);
                 tr.appendTo(this.$calorieEntryTableBody);
             }
-		},
+        },
 
-		bindOpenEdit: function(event) {
-			event.preventDefault();
+        bindOpenEdit: function(event) {
+            event.preventDefault();
 
-			var row = $(event.target).closest("tr");
-			var tds = row.find("td");
+            var row = $(event.target).closest("tr");
+            var tds = row.find("td");
 
-			this.editCalorieObject.id = row.attr("data-id");
-			this.editCalorieObject.meal = $(tds.get(0)).text();
-			this.editCalorieObject.numberOfCalories = $(tds.get(1)).text();
-			this.editCalorieObject.dateTime = $(tds.get(2)).text();
+            this.editCalorieObject.id = row.attr("data-id");
+            this.editCalorieObject.meal = $(tds.get(0)).text();
+            this.editCalorieObject.numberOfCalories = $(tds.get(1)).text();
+            this.editCalorieObject.dateTime = $(tds.get(2)).text();
 
-			this.$editMeal.val(this.editCalorieObject.meal);
-			this.$editNumberOfCalories.val(this.editCalorieObject.numberOfCalories);
-			this.$editDateTime.val(this.editCalorieObject.dateTime);
+            this.$editMeal.val(this.editCalorieObject.meal);
+            this.$editNumberOfCalories.val(this.editCalorieObject.numberOfCalories);
+            this.$editDateTime.val(this.editCalorieObject.dateTime);
 
-			this.$editModal.modal('show');
+            this.$editModal.modal('show');
         },
 
         bindDelete: function(event) {
@@ -207,7 +207,7 @@ jQuery(function ($) {
             return tr;
         },
 
-	};
+    };
 
-	App.init();
+    App.init();
 });
