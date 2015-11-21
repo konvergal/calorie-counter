@@ -74,6 +74,8 @@ public class CalorieEntryService {
         calorieEntry.setMeal(calorieEntryDTO.getMeal());
         calorieEntry.setNumberOfCalories(calorieEntryDTO.getNumberOfCalories());
         calorieEntry.setDateTime(calorieEntryDTO.getDateTime());
+
+        calorieEntryRepository.save(calorieEntry);
     }
 
     public enum CalorieEntryToDTO implements Function<CalorieEntry, CalorieEntryDTO> {

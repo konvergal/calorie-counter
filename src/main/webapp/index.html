@@ -18,7 +18,6 @@
 <div class="container">
 
 <div class="alert alert-danger" id="alert-danger" role="alert" style="display: none;"></div>
-
 <div class="alert alert-success" id="alert-success" role="alert" style="display: none;"></div>
 
 <div class="panel panel-default">
@@ -31,19 +30,19 @@
             <div class="form-group">
                 <label for="meal" class="col-sm-2 control-label">Meal</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="meal" placeholder="Meal" />
+                    <input type="text" class="form-control" name="meal" id="meal" placeholder="Meal" autocomplete="off" />
                 </div>
             </div>
             <div class="form-group">
                 <label for="number-of-calories" class="col-sm-2 control-label">Number of calories</label>
                 <div class="col-sm-10">
-                    <input type="number" class="form-control" id="number-of-calories" placeholder="Number of calories" />
+                    <input type="number" id="number-of-calories" class="form-control" name="numberOfCalories" placeholder="Number of calories" autocomplete="off" />
                 </div>
             </div>
             <div class="form-group">
                 <label for="date-time" class="col-sm-2 control-label">Date and time</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="date-time" />
+                    <input type="text" id="date-time" class="form-control" name="dateTime" autocomplete="off" placeholder="Date and time" />
                 </div>
             </div>
                 <div class="form-group">
@@ -68,19 +67,19 @@
                     <div class="form-group">
                         <label for="meal" class="col-sm-3 control-label">Meal</label>
                         <div class="col-sm-9">
-                            <input type="text" class="form-control" id="edit-meal" placeholder="Meal" />
+                            <input type="text" class="form-control" placeholder="Meal" name="meal" id="edit-meal" autocomplete="off" />
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="number-of-calories" class="col-sm-3 control-label">Number of calories</label>
                         <div class="col-sm-9">
-                            <input type="number" class="form-control" id="edit-number-of-calories" placeholder="Number of calories" />
+                            <input type="number" class="form-control" placeholder="Number of calories" name="numberOfCalories" id="edit-number-of-calories" autocomplete="off" />
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="date-time" class="col-sm-3 control-label">Date and time</label>
                         <div class="col-sm-9">
-                            <input type="text" class="form-control" id="edit-date-time" />
+                            <input type="text" class="form-control" name="dateTime" id="edit-date-time" autocomplete="off" />
                         </div>
                     </div>
             </div>
@@ -102,11 +101,11 @@
         <form class="form-inline" id="filter-form">
             <div class="form-group">
                 <label for="filter-from">From</label>
-                <input type="text" class="form-control" name="from" id="filter-from" placeholder="From" style="width: 200px;">
+                <input type="text" class="form-control" name="from" id="filter-from" placeholder="From" style="width: 200px;" autocomplete="off" >
             </div>
             <div class="form-group">
                 <label for="filter-to">To</label>
-                <input type="text" class="form-control" name="to" id="filter-to" placeholder="To" style="width: 200px;">
+                <input type="text" class="form-control" name="to" id="filter-to" placeholder="To" style="width: 200px;" autocomplete="off">
             </div>
             <button type="submit" class="btn btn-default">Filter</button>
         </form>
@@ -138,165 +137,8 @@
         integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ=="
         crossorigin="anonymous"></script>
 
+<script src="messages.js"></script>
 <script src="calorie.js"></script>
-
-<script type="text/javascript">
-
-function clearCalorieForm() {
-    $("#add-form input").val("");
-}
-
-function getRowAndId(element) {
-    var tr = element.closest("tr");
-    var dataId = tr.attr("data-id");
-    return { row : tr, id : dataId };
-}
-
-function registerDeleteHandler(deleteLink) {
-    deleteLink.click(function(event) {
-        event.preventDefault();
-
-        var rowAndId = getRowAndId($(this));
-        $.ajax({
-            type: 'DELETE',
-            url: '/api/calories/' + rowAndId.id,
-            contentType: "application/json; charset=utf-8"
-
-        }).done(function (data, textStatus, jqXHR) {
-            rowAndId.row.remove();
-            successMsg("Calorie entry deleted!");
-
-        }).fail(function (jqXHR, textStatus, errorThrown) {
-            errorMsg("Unable to delete the calorie entry!");
-            console.error(jqXHR);
-        });
-    });
-}
-
-function registerEditHandler(editLink) {
-    editLink.click(function(event) {
-        event.preventDefault();
-
-        var tds = $(this).closest("tr").find("td");
-        $("#edit-form").attr('data-id', getRowAndId($(this)).id);
-        $("#edit-meal").val($(tds.get(0)).text());
-        $("#edit-number-of-calories").val($(tds.get(1)).text());
-        $("#edit-date-time").val($(tds.get(2)).text());
-
-        $("#edit-modal").modal('show');
-    });
-}
-
-function createCalorieRow(calorieEntry) {
-    var tr = $("<tr/>", { 'data-id':calorieEntry.id });
-    $("<td/>", { 'text':calorieEntry.meal } ).appendTo(tr);
-    $("<td/>", { 'text':calorieEntry.numberOfCalories } ).appendTo(tr);
-    $("<td/>", { 'text':calorieEntry.dateTime } ).appendTo(tr);
-    var lastColumn = $("<td/>").appendTo(tr);
-    registerEditHandler($("<a href=\"#\" class=\"edit\">Edit</a>").appendTo(lastColumn));
-    lastColumn.append("&nbsp;");
-    registerDeleteHandler($("<a href=\"#\" class=\"delete\">Delete</a>").appendTo(lastColumn));
-    return tr;
-}
-
-function buildCalorieEntryTable(data) {
-    console.log(data);
-    $("#calorie-entry-table-body").html("");
-    for (i = 0; i < data.length; i++) {
-        var calorieEntry = data[i];
-        var tr = createCalorieRow(calorieEntry);
-        tr.appendTo("#calorie-entry-table-body");
-    }
-}
-
-function getFilterUrlParameters() {
-    console.log($("#filter-form").serializeArray());
-    var parameters = $.param($("#filter-form").serializeArray());
-    console.log(parameters);
-    return parameters;
-}
-
-function getCalories() {
-    $.ajax({
-            type: 'GET',
-            url: '/api/calories?' + getFilterUrlParameters(),
-            contentType: "application/json; charset=utf-8"
-
-        }).done(function (data, textStatus, jqXHR) {
-            buildCalorieEntryTable(data);
-
-        }).fail(function (jqXHR, textStatus, errorThrown) {
-            if (jqXHR.status === 403) {
-                window.location = "login.html";
-            } else {
-                errorMsg("Unable to get calorie entries!");
-                console.error(jqXHR);
-            }
-        });
-}
-
-$(function() {
-    $("#add-form").submit(
-        function(event) {
-            event.preventDefault();
-
-            $.ajax({
-                    type: 'POST',
-                    url: '/api/calories?' + getFilterUrlParameters(),
-                    contentType: "application/json; charset=utf-8",
-                    data: JSON.stringify(
-                            { "numberOfCalories" : $("#number-of-calories").val(),
-                              "meal" : $("#meal").val(),
-                              "dateTime" : $("#date-time").val() })
-
-                }).done(function (data, textStatus, jqXHR) {
-                    clearCalorieForm();
-                    successMsg("Calorie entry added.");
-                    buildCalorieEntryTable(data);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    errorMsg("Unable to add calorie entry!");
-                    console.error(jqXHR);
-                });
-        }
-    );
-
-    $("#filter-form").submit(
-        function(event) {
-            event.preventDefault();
-            getCalories();
-        }
-    );
-
-    $("#edit-form").submit(
-        function(event) {
-            event.preventDefault();
-
-            var dataObject = { "id" : $("#edit-form").attr("data-id"),
-                              "numberOfCalories" : $("#edit-number-of-calories").val(),
-                              "meal" : $("#edit-meal").val(),
-                              "dateTime" : $("#edit-date-time").val() };
-
-            $.ajax({
-                    type: 'PUT',
-                    url: '/api/calories',
-                    contentType: "application/json; charset=utf-8",
-                    data: JSON.stringify(dataObject)
-
-                }).done(function (data, textStatus, jqXHR) {
-                    $("#edit-modal").modal('hide');
-                    $("tr[data-id='" + dataObject.id + "']").replaceWith(createCalorieRow(dataObject));
-                    successMsg("Calorie entry edited.");
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    errorMsg("Unable to edit calorie entry!");
-                    console.error(jqXHR);
-                });
-        }
-    );
-
-    getCalories();
-});
-
-</script>
 
 </body>
 
